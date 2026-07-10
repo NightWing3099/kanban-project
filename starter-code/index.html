@@ -3,12 +3,244 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.png">
-  
+  <link rel="stylesheet" href="style.css">
   <title>Frontend Mentor | Kanban task management web app</title>
 </head>
-<body>
+<body class="light-theme">
 
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- Main Layout -->
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <img src="assets/logo-light.svg" alt="kanban" class="logo-light" id="logoLight">
+        <img src="assets/logo-dark.svg" alt="kanban" class="logo-dark" id="logoDark">
+      </div>
+
+      <div class="sidebar-content">
+        <p class="sidebar-heading" id="boardCount">All Boards (0)</p>
+        <nav class="board-list" id="boardList">
+          <!-- Boards rendered by JS -->
+        </nav>
+
+        <button class="create-board-btn" id="createBoardBtn">
+          <img src="assets/icon-board.svg" alt="" aria-hidden="true">
+          <span>+ Create New Board</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="theme-toggle">
+          <img src="assets/icon-light-theme.svg" alt="" aria-hidden="true">
+          <label class="toggle-switch">
+            <input type="checkbox" id="themeToggle" aria-label="Toggle theme">
+            <span class="toggle-slider"></span>
+          </label>
+          <img src="assets/icon-dark-theme.svg" alt="" aria-hidden="true">
+        </div>
+        <button class="hide-sidebar-btn" id="hideSidebarBtn">
+          <img src="assets/icon-hide-sidebar.svg" alt="" aria-hidden="true">
+          <span>Hide Sidebar</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Show Sidebar Button -->
+    <button class="show-sidebar-btn" id="showSidebarBtn">
+      <img src="assets/icon-show-sidebar.svg" alt="Show sidebar">
+    </button>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="header" id="header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">
+            <span class="mobile-logo">
+              <img src="assets/logo-mobile.svg" alt="kanban">
+            </span>
+            <div class="current-board-mobile" id="currentBoardMobile">
+              <span id="headerBoardNameMobile">Platform Launch</span>
+              <img src="assets/icon-chevron-down.svg" alt="" aria-hidden="true">
+            </div>
+          </button>
+          <h1 class="header-board-name" id="headerBoardName">Platform Launch</h1>
+          <div class="header-actions-desktop">
+            <button class="btn btn-primary" id="addTaskBtn" disabled>
+              <img src="assets/icon-add-task-mobile.svg" alt="" aria-hidden="true">
+              <span>+ Add New Task</span>
+            </button>
+            <div class="header-menu-container">
+              <button class="header-menu-btn" id="headerMenuBtn" aria-label="Board options">
+                <img src="assets/icon-vertical-ellipsis.svg" alt="">
+              </button>
+              <div class="dropdown-menu" id="headerDropdown">
+                <button id="editBoardBtn">Edit Board</button>
+                <button id="deleteBoardBtn" class="danger">Delete Board</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Empty Board State -->
+      <div class="empty-board" id="emptyBoard">
+        <p>This board is empty. Create a new column to get started.</p>
+        <button class="btn btn-primary" id="addColumnBtn">+ Add New Column</button>
+      </div>
+
+      <!-- Board View -->
+      <div class="board-view" id="boardView">
+        <div class="columns-container" id="columnsContainer">
+          <!-- Columns rendered by JS -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile Menu Drawer -->
+  <div class="mobile-drawer" id="mobileDrawer">
+    <div class="mobile-drawer-content">
+      <div class="sidebar-header">
+        <img src="assets/logo-light.svg" alt="kanban" class="logo-light" id="mobileLogoLight">
+        <img src="assets/logo-dark.svg" alt="kanban" class="logo-dark" id="mobileLogoDark">
+      </div>
+      <p class="sidebar-heading" id="mobileBoardCount">All Boards (0)</p>
+      <nav class="board-list" id="mobileBoardList">
+        <!-- Boards rendered by JS -->
+      </nav>
+      <button class="create-board-btn" id="mobileCreateBoardBtn">
+        <img src="assets/icon-board.svg" alt="" aria-hidden="true">
+        <span>+ Create New Board</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ MODALS ============ -->
+
+  <!-- Add/Edit Task Modal -->
+  <div class="modal-overlay" id="taskModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
+      <div class="modal-header">
+        <h2 id="taskModalTitle">Add New Task</h2>
+      </div>
+      <form id="taskForm" novalidate>
+        <div class="form-group">
+          <label for="taskTitle">Title</label>
+          <input type="text" id="taskTitle" placeholder="e.g. Take coffee break" required>
+          <span class="field-error" id="taskTitleError">Can't be empty</span>
+        </div>
+        <div class="form-group">
+          <label for="taskDescription">Description</label>
+          <textarea id="taskDescription" placeholder="e.g. It's always good to take a break. This 15 minute break will recharge the batteries a little."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Subtasks</label>
+          <div class="subtasks-list" id="subtasksList">
+            <!-- Subtask fields rendered by JS -->
+          </div>
+          <button type="button" class="btn btn-secondary" id="addSubtaskBtn">+ Add New Subtask</button>
+        </div>
+        <div class="form-group">
+          <label for="taskStatus">Status</label>
+          <div class="custom-select" id="taskStatusSelect">
+            <button type="button" class="select-trigger" id="taskStatusTrigger">
+              <span id="taskStatusText">Todo</span>
+              <img src="assets/icon-chevron-down.svg" alt="" aria-hidden="true">
+            </button>
+            <ul class="select-options" id="taskStatusOptions">
+              <!-- Options rendered by JS -->
+            </ul>
+          </div>
+          <input type="hidden" id="taskStatus" value="Todo">
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="taskSubmitBtn">Create Task</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- View Task Modal -->
+  <div class="modal-overlay" id="viewTaskModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="viewTaskTitle">
+      <div class="modal-header view-task-header">
+        <h2 id="viewTaskTitle"></h2>
+        <div class="header-menu-container">
+          <button class="header-menu-btn" id="viewTaskMenuBtn" aria-label="Task options">
+            <img src="assets/icon-vertical-ellipsis.svg" alt="">
+          </button>
+          <div class="dropdown-menu" id="viewTaskDropdown">
+            <button id="editTaskBtn">Edit Task</button>
+            <button id="deleteTaskBtn" class="danger">Delete Task</button>
+          </div>
+        </div>
+      </div>
+      <p class="task-description" id="viewTaskDescription"></p>
+      <div class="form-group">
+        <label id="viewSubtasksLabel">Subtasks (0 of 0)</label>
+        <div class="subtasks-check-list" id="subtasksCheckList">
+          <!-- Subtask checkboxes rendered by JS -->
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="viewTaskStatusSelect">Current Status</label>
+        <div class="custom-select" id="viewTaskStatusSelect">
+          <button type="button" class="select-trigger" id="viewTaskStatusTrigger">
+            <span id="viewTaskStatusText">Todo</span>
+            <img src="assets/icon-chevron-down.svg" alt="" aria-hidden="true">
+          </button>
+          <ul class="select-options" id="viewTaskStatusOptions">
+            <!-- Options rendered by JS -->
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Board Modal -->
+  <div class="modal-overlay" id="boardModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="boardModalTitle">
+      <div class="modal-header">
+        <h2 id="boardModalTitle">Add New Board</h2>
+      </div>
+      <form id="boardForm" novalidate>
+        <div class="form-group">
+          <label for="boardName">Name</label>
+          <input type="text" id="boardName" placeholder="e.g. Web Design" required>
+          <span class="field-error" id="boardNameError">Can't be empty</span>
+        </div>
+        <div class="form-group">
+          <label>Columns</label>
+          <div class="columns-list" id="columnsList">
+            <!-- Column fields rendered by JS -->
+          </div>
+          <button type="button" class="btn btn-secondary" id="addColumnFieldBtn">+ Add New Column</button>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="boardSubmitBtn">Create New Board</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal delete-modal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+      <div class="modal-header">
+        <h2 id="deleteModalTitle" class="danger-text">Delete this board?</h2>
+      </div>
+      <p id="deleteModalText">Are you sure you want to delete the 'Platform Launch' board? This action will remove all columns and tasks and cannot be reversed.</p>
+      <div class="delete-actions">
+        <button class="btn btn-danger" id="deleteConfirmBtn">Delete</button>
+        <button class="btn btn-secondary" id="deleteCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
