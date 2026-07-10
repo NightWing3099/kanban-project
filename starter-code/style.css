@@ -6,7 +6,7 @@
   --clr-danger: #EA5555;
   --clr-danger-hover: #FF9898;
 
-  /* Light Theme */
+  /* Light Theme (also default for prefers-color-scheme: light) */
   --clr-bg: #F4F7FD;
   --clr-bg-secondary: #FFFFFF;
   --clr-bg-sidebar: #FFFFFF;
@@ -33,6 +33,41 @@
   --clr-empty-text: #828FA3;
   --clr-logo: url('assets/logo-dark.svg');
   --clr-logo-mobile: url('assets/logo-mobile.svg');
+}
+
+/* Auto dark theme via system preference */
+@media (prefers-color-scheme: dark) {
+  .light-theme {
+    /* Respect system preference: keep body class but override appearance */
+  }
+  body:not(.light-theme):not(.dark-theme) {
+    --clr-bg: #20212C;
+    --clr-bg-secondary: #2B2C37;
+    --clr-bg-sidebar: #2B2C37;
+    --clr-text-primary: #FFFFFF;
+    --clr-text-secondary: #828FA3;
+    --clr-text-on-primary: #FFFFFF;
+    --clr-border: #3E3F4E;
+    --clr-input-bg: #2B2C37;
+    --clr-input-border: rgba(130, 143, 163, 0.25);
+    --clr-input-border-focus: var(--clr-primary);
+    --clr-overlay: rgba(0, 0, 0, 0.5);
+    --clr-checkbox-bg: #20212C;
+    --clr-checkbox-border: rgba(130, 143, 163, 0.25);
+    --clr-checkbox-checked-bg: var(--clr-primary);
+    --clr-dropdown-bg: #20212C;
+    --clr-dropdown-shadow: 0px 10px 20px rgba(0, 0, 0, 0.25);
+    --clr-modal-shadow: 0px 4px 6px rgba(0, 0, 0, 0.25);
+    --clr-column-bg: #20212C;
+    --clr-task-bg: #2B2C37;
+    --clr-task-shadow: 0px 4px 6px rgba(0, 0, 0, 0.25);
+    --clr-subtask-bg: #20212C;
+    --clr-subtask-hover: rgba(99, 95, 199, 0.25);
+    --clr-scrollbar: rgba(130, 143, 163, 0.4);
+    --clr-empty-text: #828FA3;
+    --clr-logo: url('assets/logo-light.svg');
+    --clr-logo-mobile: url('assets/logo-mobile.svg');
+  }
 }
 
 /* Dark Theme */
@@ -117,6 +152,13 @@ img {
 }
 
 /* ============ SCROLLBAR ============ */
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--clr-scrollbar) transparent;
+}
+
+/* WebKit (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -213,6 +255,13 @@ img {
   border-radius: 0 100px 100px 0;
   margin-right: 24px;
   position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
 }
 
 .board-item:hover {
@@ -931,8 +980,8 @@ img {
 }
 
 .subtask-check-item input[type="checkbox"] {
-  appearance: none;
   -webkit-appearance: none;
+  appearance: none;
   width: 16px;
   height: 16px;
   border: 1px solid var(--clr-checkbox-border);

@@ -9,23 +9,41 @@ const COLORS = ['#49C4E5', '#8471F2', '#67E2AE', '#EA5555', '#A8A4FF', '#FF9898'
 
 // Load data
 async function loadData() {
-  const stored = localStorage.getItem('kanban-data');
-  if (stored) {
-    data = JSON.parse(stored);
-    return;
-  }
+  let stored;
   try {
-    const res = await fetch('data.json');
-    data = await res.json();
-    saveData();
+    stored = localStorage.getItem('kanban-data');
   } catch (e) {
-    console.error('Failed to load data:', e);
-    data = { boards: [] };
+    // localStorage unavailable (private browsing, storage quota exceeded)
+    console.warn('localStorage not available:', e);
+  }
+  if (stored) {
+    try {
+      data = JSON.parse(stored);
+    } catch (e) {
+      // Corrupted data — reset to seed
+      stored = null;
+    }
+  }
+  if (!stored) {
+    try {
+      const res = await fetch('data.json');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      data = await res.json();
+      saveData();
+    } catch (e) {
+      console.error('Failed to load data:', e);
+      data = { boards: [] };
+    }
   }
 }
 
 function saveData() {
-  localStorage.setItem('kanban-data', JSON.stringify(data));
+  try {
+    localStorage.setItem('kanban-data', JSON.stringify(data));
+  } catch (e) {
+    // Storage full or unavailable — silently degrade
+    console.warn('Failed to save data:', e);
+  }
 }
 
 /* ============ DOM REFS ============ */
@@ -104,7 +122,11 @@ const deleteCancelBtn = $('deleteCancelBtn');
 
 /* ============ THEME ============ */
 function getTheme() {
-  return localStorage.getItem('kanban-theme') || 'light';
+  try {
+    return localStorage.getItem('kanban-theme') || 'light';
+  } catch {
+    return 'light';
+  }
 }
 
 function setTheme(theme) {
@@ -117,7 +139,11 @@ function setTheme(theme) {
     document.body.classList.add('light-theme');
     themeToggle.checked = false;
   }
-  localStorage.setItem('kanban-theme', theme);
+  try {
+    localStorage.setItem('kanban-theme', theme);
+  } catch (e) {
+    console.warn('Failed to save theme:', e);
+  }
 }
 
 function toggleTheme() {
@@ -138,11 +164,20 @@ function toggleSidebar(show) {
     sidebar.classList.add('hidden');
     showSidebarBtn.classList.add('visible');
   }
-  localStorage.setItem('kanban-sidebar', sidebar.classList.contains('hidden') ? 'hidden' : 'visible');
+  try {
+    localStorage.setItem('kanban-sidebar', sidebar.classList.contains('hidden') ? 'hidden' : 'visible');
+  } catch (e) {
+    console.warn('Failed to save sidebar state:', e);
+  }
 }
 
 function initSidebar() {
-  const state = localStorage.getItem('kanban-sidebar');
+  let state;
+  try {
+    state = localStorage.getItem('kanban-sidebar');
+  } catch {
+    state = null;
+  }
   if (state === 'hidden') {
     toggleSidebar(false);
   }
@@ -837,7 +872,10 @@ function reorderTask(colIdx, fromIdx, toIdx) {
   const board = data.boards[currentBoardIndex];
   const tasks = board.columns[colIdx].tasks;
   const [task] = tasks.splice(fromIdx, 1);
-  tasks.splice(toIdx, 0, task);
+  // When fromIdx < toIdx, the array shifts left after removal,
+  // so the correct insertion point is toIdx - 1
+  const adjustedTo = fromIdx < toIdx ? toIdx - 1 : toIdx;
+  tasks.splice(adjustedTo, 0, task);
   saveData();
   render();
 }
