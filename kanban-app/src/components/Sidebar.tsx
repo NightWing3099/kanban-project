@@ -1,7 +1,8 @@
 import { useKanban } from '../context/KanbanContext';
+import ThemeToggle from './ThemeToggle';
 
 export default function Sidebar() {
-  const { data, currentBoardIndex, sidebarHidden, selectBoard, addBoard, toggleTheme, toggleSidebar, theme } = useKanban();
+  const { data, currentBoardIndex, sidebarHidden, selectBoard, addBoard, toggleSidebar } = useKanban();
 
   if (sidebarHidden) return null;
 
@@ -46,21 +47,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="p-4 px-6 pb-8 border-t border-kanban-border dark:border-[#3E3F4E] transition-colors">
-        {/* Theme Toggle */}
-        <div className="flex items-center justify-center gap-5 bg-kanban-bg dark:bg-[#20212C] p-3.5 rounded-md mb-2 transition-colors">
-          <img src="/assets/icon-light-theme.svg" alt="" />
-          <button
-            role="switch"
-            aria-checked={theme === 'dark'}
-            onClick={toggleTheme}
-            className="relative inline-block w-10 h-5 cursor-pointer"
-          >
-            <span className={`absolute inset-0 rounded-[20px] transition-colors ${theme === 'dark' ? 'bg-primary' : 'bg-primary'}`}>
-              <span className={`absolute h-3.5 w-3.5 left-[3px] bottom-[3px] bg-white rounded-full transition-transform ${theme === 'dark' ? 'translate-x-5' : ''}`} />
-            </span>
-          </button>
-          <img src="/assets/icon-dark-theme.svg" alt="" />
-        </div>
+        <ThemeToggle className="mb-2" />
 
         <button
           onClick={() => toggleSidebar(true)}

@@ -1,7 +1,8 @@
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import seedData from '../data.json';
+import type { KanbanState, KanbanAction, Board, KanbanData, ModalName, ModalData, Task, Column } from '../types';
 
-const KanbanContext = createContext(null);
+const KanbanContext = createContext<KanbanState | null>(null);
 
 const COLORS = ['#49C4E5', '#8471F2', '#67E2AE', '#EA5555', '#A8A4FF', '#FF9898', '#FFC700'];
 
@@ -11,31 +12,40 @@ const SIDEBAR_KEY = 'kanban-sidebar';
 
 // ============ INITIAL STATE LOADERS ============
 
-function loadInitialData() {
+function loadInitialData(): KanbanData {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      const parsed = JSON.parse(stored);
+      const parsed = JSON.parse(stored) as KanbanData;
       if (parsed && Array.isArray(parsed.boards)) return parsed;
     }
   } catch { /* ignore */ }
-  return seedData;
+  return seedData as KanbanData;
 }
 
-function loadTheme() {
-  try { return localStorage.getItem(THEME_KEY) || 'light'; }
+function loadTheme(): 'light' | 'dark' {
+  try { return (localStorage.getItem(THEME_KEY) as 'light' | 'dark') || 'light'; }
   catch { return 'light'; }
 }
 
-function loadSidebarState() {
+function loadSidebarState(): boolean {
   try { return localStorage.getItem(SIDEBAR_KEY) === 'hidden'; }
   catch { return false; }
 }
 
 // ============ REDUCER ============
 
-function reducer(state, action) {
-  let draft;
+interface ReducerState {
+  data: KanbanData;
+  currentBoardIndex: number;
+  theme: 'light' | 'dark';
+  sidebarHidden: boolean;
+  activeModal: ModalName | null;
+  modalData: ModalData | null;
+}
+
+function reducer(state: ReducerState, action: KanbanAction): ReducerState {
+  let draft: KanbanData;
   switch (action.type) {
     // Theme & Sidebar
     case 'TOGGLE_THEME':
@@ -68,7 +78,7 @@ function reducer(state, action) {
 
     // Task CRUD
     case 'ADD_TASK': {
-      draft = JSON.parse(JSON.stringify(state.data));
+      draft = structuredClone(state.data);
       const col = draft.boards[state.currentBoardIndex].columns.find(c => c.name === action.payload.status);
       if (col) col.tasks.push(action.payload.task);
       return { ...state, data: draft };
@@ -76,7 +86,7 @@ function reducer(state, action) {
 
     case 'UPDATE_TASK': {
       const { columnIndex, taskIndex, task, newStatus } = action.payload;
-      draft = JSON.parse(JSON.stringify(state.data));
+      draft = structuredClone(state.data);
       const board = draft.boards[state.currentBoardIndex];
       if (newStatus && task.status !== newStatus) {
         board.columns[columnIndex].tasks.splice(taskIndex, 1);
@@ -90,14 +100,14 @@ function reducer(state, action) {
 
     case 'DELETE_TASK': {
       const { colIdx, taskIdx } = action.payload;
-      draft = JSON.parse(JSON.stringify(state.data));
+      draft = structuredClone(state.data);
       draft.boards[state.currentBoardIndex].columns[colIdx].tasks.splice(taskIdx, 1);
       return { ...state, data: draft };
     }
 
     case 'MOVE_TASK': {
       const { fromColIdx, fromTaskIdx, toColIdx, dropIndex } = action.payload;
-      draft = JSON.parse(JSON.stringify(state.data));
+      draft = structuredClone(state.data);
       const board = draft.boards[state.currentBoardIndex];
       const [task] = board.columns[fromColIdx].tasks.splice(fromTaskIdx, 1);
       task.status = board.columns[toColIdx].name;
@@ -111,7 +121,7 @@ function reducer(state, action) {
 
     case 'TOGGLE_SUBTASK': {
       const { colIdx, taskIdx, subtaskIdx } = action.payload;
-      draft = JSON.parse(JSON.stringify(state.data));
+      draft = structuredClone(state.data);
       const subtasks = draft.boards[state.currentBoardIndex].columns[colIdx].tasks[taskIdx].subtasks;
       subtasks[subtaskIdx].isCompleted = !subtasks[subtaskIdx].isCompleted;
       return { ...state, data: draft };
@@ -130,7 +140,7 @@ function reducer(state, action) {
 
 // ============ PROVIDER ============
 
-export function KanbanProvider({ children }) {
+export function KanbanProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, {
     data: loadInitialData(),
     currentBoardIndex: 0,
@@ -165,22 +175,33 @@ export function KanbanProvider({ children }) {
 
   // Actions
   const toggleTheme = useCallback(() => dispatch({ type: 'TOGGLE_THEME' }), []);
-  const toggleSidebar = useCallback((v) => dispatch({ type: 'TOGGLE_SIDEBAR', payload: v }), []);
-  const selectBoard = useCallback((i) => dispatch({ type: 'SELECT_BOARD', payload: i }), []);
-  const addBoard = useCallback((b) => dispatch({ type: 'ADD_BOARD', payload: b }), []);
-  const updateBoard = useCallback((b) => dispatch({ type: 'UPDATE_BOARD', payload: b }), []);
-  const deleteBoard = useCallback((i) => dispatch({ type: 'DELETE_BOARD', payload: i }), []);
-  const addTask = useCallback((t) => dispatch({ type: 'ADD_TASK', payload: t }), []);
-  const updateTask = useCallback((p) => dispatch({ type: 'UPDATE_TASK', payload: p }), []);
-  const deleteTask = useCallback((p) => dispatch({ type: 'DELETE_TASK', payload: p }), []);
-  const moveTask = useCallback((p) => dispatch({ type: 'MOVE_TASK', payload: p }), []);
-  const toggleSubtask = useCallback((p) => dispatch({ type: 'TOGGLE_SUBTASK', payload: p }), []);
+  const toggleSidebar = useCallback((v?: boolean) => dispatch({ type: 'TOGGLE_SIDEBAR', payload: v }), []);
+  const selectBoard = useCallback((i: number) => dispatch({ type: 'SELECT_BOARD', payload: i }), []);
+  const addBoard = useCallback((b: Board) => dispatch({ type: 'ADD_BOARD', payload: b }), []);
+  const updateBoard = useCallback((b: Partial<Board> & { columns?: Column[] }) => dispatch({ type: 'UPDATE_BOARD', payload: b }), []);
+  const deleteBoard = useCallback((i?: number) => dispatch({ type: 'DELETE_BOARD', payload: i }), []);
+  const addTask = useCallback((t: { status: string; task: Task }) => dispatch({ type: 'ADD_TASK', payload: t }), []);
+  const updateTask = useCallback((p: {
+    columnIndex: number;
+    taskIndex: number;
+    task: Task;
+    newStatus?: string;
+  }) => dispatch({ type: 'UPDATE_TASK', payload: p }), []);
+  const deleteTask = useCallback((p: { colIdx: number; taskIdx: number }) => dispatch({ type: 'DELETE_TASK', payload: p }), []);
+  const moveTask = useCallback((p: {
+    fromColIdx: number;
+    fromTaskIdx: number;
+    toColIdx: number;
+    dropIndex?: number;
+  }) => dispatch({ type: 'MOVE_TASK', payload: p }), []);
+  const toggleSubtask = useCallback((p: { colIdx: number; taskIdx: number; subtaskIdx: number }) =>
+    dispatch({ type: 'TOGGLE_SUBTASK', payload: p }), []);
 
-  const openModal = useCallback((name, data = null) =>
+  const openModal = useCallback((name: ModalName, data: ModalData | null = null) =>
     dispatch({ type: 'OPEN_MODAL', payload: { name, data } }), []);
   const closeModal = useCallback(() => dispatch({ type: 'CLOSE_MODAL' }), []);
 
-  const value = {
+  const value: KanbanState = {
     ...state,
     currentBoard,
     COLORS,
@@ -206,7 +227,7 @@ export function KanbanProvider({ children }) {
   );
 }
 
-export function useKanban() {
+export function useKanban(): KanbanState {
   const ctx = useContext(KanbanContext);
   if (!ctx) throw new Error('useKanban must be used within KanbanProvider');
   return ctx;

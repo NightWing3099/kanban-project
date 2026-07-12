@@ -1,22 +1,34 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, type FormEvent } from 'react';
 import { useKanban } from '../context/KanbanContext';
+import { useClickOutside } from '../hooks';
+import type { Board, Task } from '../types';
+
+interface TaskModalContentProps {
+  closeModal: () => void;
+  currentBoard: Board | null;
+  existingTask: Task | null;
+  colIdx: number | undefined;
+  taskIdx: number | undefined;
+  addTask: (t: { status: string; task: Task }) => void;
+  updateTask: (p: { columnIndex: number; taskIndex: number; task: Task; newStatus?: string }) => void;
+}
 
 export default function TaskModal() {
   const { activeModal, modalData, closeModal, currentBoard, addTask, updateTask } = useKanban();
 
   if (activeModal !== 'task') return null;
 
-  const isEdit = modalData?.edit && modalData?.colIdx !== undefined;
+  const isEdit = !!(modalData?.edit && modalData?.colIdx !== undefined);
   const colIdx = modalData?.colIdx;
   const taskIdx = modalData?.taskIdx;
-  const existingTask = isEdit ? currentBoard?.columns[colIdx]?.tasks[taskIdx] : null;
+  const existingTask = isEdit ? currentBoard?.columns[colIdx!]?.tasks[taskIdx!] : null;
 
   return (
     <div className="fixed inset-0 bg-kanban-overlay z-[1000] flex items-center justify-center p-4 overflow-y-auto" onClick={closeModal}>
       <TaskModalContent
         closeModal={closeModal}
         currentBoard={currentBoard}
-        existingTask={existingTask}
+        existingTask={existingTask || null}
         colIdx={colIdx}
         taskIdx={taskIdx}
         addTask={addTask}
@@ -26,44 +38,35 @@ export default function TaskModal() {
   );
 }
 
-function TaskModalContent({ closeModal, currentBoard, existingTask, colIdx, taskIdx, addTask, updateTask }) {
+function TaskModalContent({ closeModal, currentBoard, existingTask, colIdx, taskIdx, addTask, updateTask }: TaskModalContentProps) {
   const isEdit = !!existingTask;
   const [title, setTitle] = useState(existingTask?.title || '');
   const [description, setDescription] = useState(existingTask?.description || '');
   const [status, setStatus] = useState(existingTask?.status || currentBoard?.columns[0]?.name || '');
-  const [subtasks, setSubtasks] = useState(
+  const [subtasks, setSubtasks] = useState<{ title: string; isCompleted: boolean }[]>(
     existingTask ? existingTask.subtasks.map(s => ({ title: s.title, isCompleted: s.isCompleted }))
       : [{ title: '', isCompleted: false }]
   );
   const [selectOpen, setSelectOpen] = useState(false);
   const [titleError, setTitleError] = useState(false);
-  const selectRef = useRef(null);
-
-  useEffect(() => {
-    function handleClick(e) {
-      if (selectRef.current && !selectRef.current.contains(e.target)) {
-        setSelectOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
+  const selectRef = useRef<HTMLDivElement>(null);
+  useClickOutside(selectRef, () => setSelectOpen(false));
 
   const addSubtaskField = () => {
     setSubtasks([...subtasks, { title: '', isCompleted: false }]);
   };
 
-  const removeSubtaskField = (idx) => {
+  const removeSubtaskField = (idx: number) => {
     setSubtasks(subtasks.filter((_, i) => i !== idx));
   };
 
-  const updateSubtask = (idx, value) => {
+  const updateSubtask = (idx: number, value: string) => {
     const updated = [...subtasks];
     updated[idx] = { ...updated[idx], title: value };
     setSubtasks(updated);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
       setTitleError(true);
@@ -73,7 +76,7 @@ function TaskModalContent({ closeModal, currentBoard, existingTask, colIdx, task
 
     const validSubtasks = subtasks.filter(s => s.title.trim());
 
-    const task = {
+    const task: Task = {
       title: title.trim(),
       description: description.trim(),
       status,
@@ -82,10 +85,10 @@ function TaskModalContent({ closeModal, currentBoard, existingTask, colIdx, task
 
     if (isEdit) {
       updateTask({
-        columnIndex: existingTask.index?.colIdx ?? colIdx,
-        taskIndex: existingTask.index?.taskIdx ?? taskIdx,
+        columnIndex: colIdx!,
+        taskIndex: taskIdx!,
         task,
-        newStatus: status !== existingTask.status ? status : undefined,
+        newStatus: status !== existingTask!.status ? status : undefined,
       });
     } else {
       addTask({ status, task });

@@ -1,4 +1,5 @@
 import { useKanban } from '../context/KanbanContext';
+import type { Column, Task } from '../types';
 
 export default function BoardView() {
   const { currentBoard, openModal } = useKanban();
@@ -49,20 +50,20 @@ export default function BoardView() {
   );
 }
 
-function Column({ column, colIdx }) {
+function Column({ column, colIdx }: { column: Column; colIdx: number }) {
   const { COLORS, moveTask, currentBoardIndex } = useKanban();
   const color = COLORS[colIdx % COLORS.length];
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.currentTarget.classList.add('bg-primary/5', 'rounded-lg');
   };
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.currentTarget.classList.remove('bg-primary/5', 'rounded-lg');
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.currentTarget.classList.remove('bg-primary/5', 'rounded-lg');
     const raw = e.dataTransfer.getData('text/plain');
@@ -72,9 +73,9 @@ function Column({ column, colIdx }) {
 
     if (fromColIdx === colIdx) {
       // Reorder within same column
-      const targetCard = e.target.closest('[data-task-idx]');
+      const targetCard = (e.target as HTMLElement).closest('[data-task-idx]');
       if (targetCard) {
-        const dropIdx = parseInt(targetCard.dataset.taskIdx, 10);
+        const dropIdx = parseInt((targetCard as HTMLElement).dataset.taskIdx!, 10);
         moveTask({ fromColIdx, fromTaskIdx, toColIdx: colIdx, dropIndex: dropIdx });
       }
     } else {
@@ -108,17 +109,17 @@ function Column({ column, colIdx }) {
   );
 }
 
-function TaskCard({ task, colIdx, taskIdx }) {
+function TaskCard({ task, colIdx, taskIdx }: { task: Task; colIdx: number; taskIdx: number }) {
   const { currentBoardIndex, openModal } = useKanban();
   const completed = task.subtasks.filter(s => s.isCompleted).length;
   const total = task.subtasks.length;
 
-  const handleDragStart = (e) => {
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     e.dataTransfer.setData('text/plain', `${currentBoardIndex}-${colIdx}-${taskIdx}`);
     e.currentTarget.classList.add('opacity-50');
   };
 
-  const handleDragEnd = (e) => {
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
     e.currentTarget.classList.remove('opacity-50');
   };
 

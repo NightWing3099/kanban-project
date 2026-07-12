@@ -10,7 +10,7 @@ export default function DeleteModal() {
       deleteBoard();
     } else if (activeModal === 'deleteTask') {
       const { colIdx, taskIdx } = modalData || {};
-      deleteTask({ colIdx, taskIdx });
+      deleteTask({ colIdx: colIdx!, taskIdx: taskIdx! });
     }
     closeModal();
   };
@@ -20,7 +20,7 @@ export default function DeleteModal() {
   const taskTitle = (() => {
     if (!isBoard && modalData) {
       const { colIdx, taskIdx } = modalData;
-      return currentBoard?.columns[colIdx]?.tasks[taskIdx]?.title || '';
+      return currentBoard?.columns[colIdx!]?.tasks[taskIdx!]?.title || '';
     }
     return '';
   })();

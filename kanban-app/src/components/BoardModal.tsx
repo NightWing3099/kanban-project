@@ -1,12 +1,21 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useKanban } from '../context/KanbanContext';
+import type { Board, Column } from '../types';
+
+interface BoardModalContentProps {
+  closeModal: () => void;
+  isEdit: boolean;
+  currentBoard: Board | null;
+  addBoard: (b: Board) => void;
+  updateBoard: (b: Partial<Board> & { columns?: Column[] }) => void;
+}
 
 export default function BoardModal() {
   const { activeModal, modalData, closeModal, currentBoard, addBoard, updateBoard } = useKanban();
 
   if (activeModal !== 'board') return null;
 
-  const isEdit = modalData?.edit && currentBoard;
+  const isEdit = !!(modalData?.edit && currentBoard);
 
   return (
     <div
@@ -24,9 +33,9 @@ export default function BoardModal() {
   );
 }
 
-function BoardModalContent({ closeModal, isEdit, currentBoard, addBoard, updateBoard }) {
+function BoardModalContent({ closeModal, isEdit, currentBoard, addBoard, updateBoard }: BoardModalContentProps) {
   const [name, setName] = useState(currentBoard?.name || '');
-  const [columns, setColumns] = useState(
+  const [columns, setColumns] = useState<string[]>(
     isEdit && currentBoard?.columns
       ? currentBoard.columns.map(c => c.name)
       : ['Todo', 'Doing', 'Done']
@@ -37,17 +46,17 @@ function BoardModalContent({ closeModal, isEdit, currentBoard, addBoard, updateB
     setColumns([...columns, '']);
   };
 
-  const removeColumn = (idx) => {
+  const removeColumn = (idx: number) => {
     setColumns(columns.filter((_, i) => i !== idx));
   };
 
-  const updateColumn = (idx, value) => {
+  const updateColumn = (idx: number, value: string) => {
     const updated = [...columns];
     updated[idx] = value;
     setColumns(updated);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       setNameError(true);
@@ -60,14 +69,14 @@ function BoardModalContent({ closeModal, isEdit, currentBoard, addBoard, updateB
 
     if (isEdit) {
       // Preserve tasks for columns that still exist
-      const newColumns = validColumns.map(colName => {
-        const existing = currentBoard.columns.find(c => c.name === colName);
+      const newColumns: Column[] = validColumns.map(colName => {
+        const existing = currentBoard!.columns.find(c => c.name === colName);
         return existing || { name: colName, tasks: [] };
       });
 
       // Move tasks from removed columns to first column
-      const removedTasks = [];
-      currentBoard.columns.forEach(col => {
+      const removedTasks: typeof newColumns[0]['tasks'] = [];
+      currentBoard!.columns.forEach(col => {
         if (!validColumns.includes(col.name)) {
           removedTasks.push(...col.tasks);
         }

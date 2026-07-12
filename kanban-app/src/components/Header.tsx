@@ -1,23 +1,15 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useKanban } from '../context/KanbanContext';
+import { useClickOutside } from '../hooks';
 
 export default function Header() {
   const { currentBoard, openModal } = useKanban();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    function handleClick(e) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  useClickOutside(dropdownRef, () => setDropdownOpen(false));
 
   const boardName = currentBoard?.name || 'No boards';
-  const hasColumns = currentBoard?.columns?.length > 0;
+  const hasColumns = currentBoard && currentBoard.columns.length > 0;
 
   return (
     <header className="flex items-center justify-between px-6 py-5 bg-white dark:bg-[#2B2C37] border-b border-kanban-border dark:border-[#3E3F4E] transition-colors min-h-[97px] max-md:min-h-16 max-md:px-5 max-sm:min-h-14 max-sm:px-4">

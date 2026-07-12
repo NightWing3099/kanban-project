@@ -1,13 +1,28 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useKanban } from '../context/KanbanContext';
+import { useClickOutside } from '../hooks';
+import type { Board, Task, ModalName, ModalData } from '../types';
+
+interface ViewTaskContentProps {
+  task: Task;
+  colIdx: number;
+  taskIdx: number;
+  completed: number;
+  total: number;
+  closeModal: () => void;
+  currentBoard: Board | null;
+  toggleSubtask: (p: { colIdx: number; taskIdx: number; subtaskIdx: number }) => void;
+  updateTask: (p: { columnIndex: number; taskIndex: number; task: Task; newStatus?: string }) => void;
+  openModal: (name: ModalName, data?: ModalData | null) => void;
+}
 
 export default function ViewTaskModal() {
-  const { activeModal, modalData, closeModal, currentBoard, toggleSubtask, deleteTask, updateTask, openModal } = useKanban();
+  const { activeModal, modalData, closeModal, currentBoard, toggleSubtask, updateTask, openModal } = useKanban();
 
   if (activeModal !== 'viewTask') return null;
 
   const { colIdx, taskIdx } = modalData || {};
-  const task = currentBoard?.columns[colIdx]?.tasks[taskIdx];
+  const task = currentBoard?.columns[colIdx!]?.tasks[taskIdx!];
   if (!task) return null;
 
   const completed = task.subtasks.filter(s => s.isCompleted).length;
@@ -20,14 +35,13 @@ export default function ViewTaskModal() {
     >
       <ViewTaskContent
         task={task}
-        colIdx={colIdx}
-        taskIdx={taskIdx}
+        colIdx={colIdx!}
+        taskIdx={taskIdx!}
         completed={completed}
         total={total}
         closeModal={closeModal}
         currentBoard={currentBoard}
         toggleSubtask={toggleSubtask}
-        deleteTask={deleteTask}
         updateTask={updateTask}
         openModal={openModal}
       />
@@ -35,26 +49,15 @@ export default function ViewTaskModal() {
   );
 }
 
-function ViewTaskContent({ task, colIdx, taskIdx, completed, total, closeModal, currentBoard, toggleSubtask, deleteTask, updateTask, openModal }) {
+function ViewTaskContent({ task, colIdx, taskIdx, completed, total, closeModal, currentBoard, toggleSubtask, updateTask, openModal }: ViewTaskContentProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectOpen, setSelectOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const selectRef = useRef(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const selectRef = useRef<HTMLDivElement>(null);
+  useClickOutside(dropdownRef, () => setDropdownOpen(false));
+  useClickOutside(selectRef, () => setSelectOpen(false));
 
-  useEffect(() => {
-    function handleClick(e) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDropdownOpen(false);
-      }
-      if (selectRef.current && !selectRef.current.contains(e.target)) {
-        setSelectOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
-
-  const handleStatusChange = (newStatus) => {
+  const handleStatusChange = (newStatus: string) => {
     setSelectOpen(false);
     if (newStatus === task.status) return;
     updateTask({
@@ -65,9 +68,9 @@ function ViewTaskContent({ task, colIdx, taskIdx, completed, total, closeModal, 
     });
     // Re-open the view for the moved task
     setTimeout(() => {
-      const newColIdx = currentBoard.columns.findIndex(c => c.name === newStatus);
+      const newColIdx = currentBoard!.columns.findIndex(c => c.name === newStatus);
       if (newColIdx !== -1) {
-        const newTaskIdx = currentBoard.columns[newColIdx].tasks.length - 1;
+        const newTaskIdx = currentBoard!.columns[newColIdx].tasks.length - 1;
         closeModal();
         setTimeout(() => {
           openModal('viewTask', { colIdx: newColIdx, taskIdx: newTaskIdx });
