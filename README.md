@@ -1,85 +1,109 @@
 # organizeME — Kanban Task Management
 
-A fully responsive, feature-rich kanban board application for organizing projects, tracking tasks, and collaborating with clarity. Built with vanilla HTML, CSS, and JavaScript — no framework overhead, just a fast, accessible experience that works everywhere.
-
-
-
----
+A fully responsive, production-grade kanban board application built with **React**, **TypeScript**, and **Tailwind CSS**. Drag-and-drop task management, dark/light theming, persistent local state, and a clean component architecture — designed to demonstrate modern front-end engineering practices.
 
 ## Features
 
-- **Board-based organization** — Create multiple boards for different projects, teams, or workflows
-- **Drag-and-drop task management** — Reorder tasks within columns or move them between columns to update status
-- **Subtasks with progress tracking** — Break work down into subtasks and track completion at a glance
-- **Persistent state** — All data is saved to `localStorage` automatically; nothing is lost on refresh
-- **Light/dark theme** — Toggle between themes with a persistent preference
-- **Collapsible sidebar** — Hide the sidebar for more screen real estate when you need it
-- **Responsive design** — Optimized for desktop, tablet, and mobile with a dedicated mobile drawer navigation
-- **Full CRUD** — Create, read, update, and delete boards, columns, and tasks with form validation
-- **Keyboard accessible** — Full keyboard navigation, Escape to close modals, focus management throughout
-
----
+- **Board-based organization** — Create and manage multiple project boards with custom columns
+- **Drag-and-drop task management** — Native HTML5 drag-and-drop with cross-column status updates and in-column reordering
+- **Subtasks with progress tracking** — Break tasks into subtasks with checkbox completion and live progress indicators
+- **Persistent state** — All data, theme preference, and sidebar visibility survive page refreshes via `localStorage`
+- **Light/dark theme** — Theme toggle with system-class-based Tailwind dark mode and persistent preference
+- **Collapsible sidebar** — Hide the desktop sidebar for maximum screen real estate with a show-sidebar affordance
+- **Responsive design** — Dedicated mobile drawer navigation, adaptive layouts, and touch-friendly interactions
+- **Full CRUD operations** — Create, read, update, and delete boards, columns, and tasks with inline form validation
+- **Accessible** — Semantic HTML, ARIA attributes (`role="switch"`, `aria-checked`), keyboard-dismissible modals
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
-| Markup | Semantic HTML5 |
-| Styling | CSS with custom properties, Flexbox |
-| Logic | Vanilla JavaScript (ES6+) |
-| Storage | `localStorage` with `data.json` seed data |
-| Font | [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans) |
-
-No build tools, no frameworks, no dependencies. Open `index.html` and it works.
-
----
+|---|---|
+| Framework | React 18 with functional components and hooks |
+| Language | TypeScript (strict mode) |
+| Build Tool | Vite 6 |
+| Styling | Tailwind CSS 3 with custom theme tokens |
+| State Management | `useReducer` + React Context API |
+| Type Safety | Full TypeScript types for state, actions, and props |
+| Persistence | `localStorage` with JSON seed data fallback |
+| Deployment | Netlify with asset hashing and cache headers |
+| Font | Plus Jakarta Sans |
 
 ## Getting Started
 
 ```bash
 # Clone the repo
-git clone https://github.com/your-username/organizeME.git
+git clone https://github.com/NightWing3099/kanban-project.git
 
-# Open in browser
-cd organizeME/starter-code
-open index.html
+# Install dependencies
+cd kanban-project/kanban-app
+npm install
+
+# Start development server
+npm run dev
+
+# Production build
+npm run build
+npm run preview
 ```
 
-That's it. The app loads with sample data on first visit and persists all changes locally.
-
----
+The app seeds with sample data on first visit and persists all changes locally via `localStorage`.
 
 ## Project Structure
 
 ```
-starter-code/
-├── index.html          # Main HTML document
-├── style.css           # All styles (1158 lines)
-├── app.js              # Application logic (883 lines)
-├── data.json           # Seed data for first load
-└── assets/             # Icons, logos, favicon
+kanban-app/
+├── src/
+│   ├── main.tsx                    # React entry point
+│   ├── App.tsx                     # Root layout + modal composition
+│   ├── types.ts                    # TypeScript interfaces & discriminated union types
+│   ├── hooks.ts                    # Shared custom hook (useClickOutside)
+│   ├── data.json                   # Seed data for first load
+│   ├── index.css                   # Tailwind directives + scrollbar + theme utilities
+│   ├── context/
+│   │   └── KanbanContext.tsx       # Global state via useReducer + Context (234 lines)
+│   └── components/
+│       ├── BoardView.tsx           # Column layout + drag-and-drop + empty states
+│       ├── BoardModal.tsx          # Add/Edit board form with dynamic column management
+│       ├── DeleteModal.tsx         # Polymorphic delete confirmation (board or task)
+│       ├── Header.tsx              # Top bar with mobile menu trigger + board actions
+│       ├── MobileDrawer.tsx        # Slide-out mobile navigation with board list
+│       ├── Sidebar.tsx             # Desktop board list + hide sidebar control
+│       ├── TaskModal.tsx           # Add/Edit task form with subtask list + status select
+│       ├── ThemeToggle.tsx         # Reusable light/dark theme switch (shared by Sidebar + MobileDrawer)
+│       └── ViewTaskModal.tsx       # Task detail view with subtask toggles + status change
+├── public/assets/                  # SVG icons, logos, favicon
+├── index.html                      # Vite HTML entry
+├── vite.config.js                  # Vite configuration
+├── tailwind.config.js              # Tailwind theme token customization
+├── tsconfig.json                   # TypeScript strict mode configuration
+└── package.json                    # Dependencies and scripts
 ```
 
----
+## Architecture Decisions
 
-## Key Design Decisions
+### `useReducer` + Context over Redux/Zustand
+For this scope, `useReducer` paired with React Context provides sufficient global state management without external dependencies. The reducer handles 14 discrete action types with a discriminated union, giving compile-time exhaustiveness checking. Each action handler uses `structuredClone()` for immutable deep copies — faster and more readable than `JSON.parse(JSON.stringify())`.
 
-**Vanilla JS over frameworks.** For a focused tool like this, the overhead of React or Vue wasn't justified. The DOM manipulation is straightforward, state is simple enough for a single render function, and the result is a zero-dependency app that loads instantly.
+### Component-driven modals
+Rather than a routing library, modals are controlled by a single `activeModal` state in context. Each modal component returns `null` when not active, keeping the render tree clean. This pattern avoids the complexity of React Router for what is fundamentally a single-page tool with overlay workflows.
 
-**CSS custom properties for theming.** The entire light/dark theme toggle is driven by swapping custom property values on `.dark-theme`. No duplicate style blocks, no preprocessor required.
+### Custom theme tokens in Tailwind
+Colors, shadows, font sizes, and spacing are defined as Tailwind theme extensions (e.g., `bg-kanban-bg`, `text-primary`, `shadow-dropdown`). This creates a single source of truth for the design system, keeping markup concise and thematically consistent.
 
-**Drag-and-drop with the native HTML5 API.** The `draggable` attribute, `dragstart`/`dragover`/`drop` events, and `dataTransfer` provide everything needed. The reorder logic accounts for the array index shift that occurs when removing an element mid-list — a subtle bug that's easy to miss.
+### Shared abstractions
+`ThemeToggle` and `useClickOutside` were extracted from duplicated code across the Sidebar, MobileDrawer, Header, TaskModal, and ViewTaskModal components — eliminating ~48 lines of repeated logic. The `DeleteModal` handles both board and task deletions via a polymorphic approach, avoiding two nearly-identical modal components.
 
----
+### Drag-and-drop with native API
+Uses the HTML5 Drag and Drop API with `draggable`, `onDragStart`, `onDragOver`, and `onDrop`. The `dataTransfer` payload carries the board index, source column index, and task index to enable both cross-column moves and in-column reordering (calculating the correct drop index after the source element is removed).
 
-## What I'd Do Differently Next Time
+## What I'd Add Next
 
-- **Undo/redo.** Destructive actions (deleting a board, moving a task) would benefit from an undo stack.
-- **Offline-first with IndexedDB.** `localStorage` has a 5MB limit and is synchronous. For a production app with larger datasets, IndexedDB or a lightweight wrapper like Dexie would be the right call.
-- **Drag-and-drop on mobile.** The native HTML5 DnD API doesn't work on touch devices. A production version would need a touch-compatible implementation or a library like SortableJS.
-- **Unit tests.** The render function and data mutations are prime candidates for test coverage.
-
----
+- **Undo/redo stack** — Destructive actions (board/task deletion, task moves) would benefit from a command-pattern undo history stored in context state
+- **Touch drag-and-drop** — Replace the native HTML5 DnD API with a touch-compatible library (e.g., `@dnd-kit/core`) for mobile/tablet users
+- **IndexedDB persistence** — Migrate from `localStorage` (5MB limit, synchronous) to IndexedDB via Dexie.js for larger datasets and non-blocking I/O
+- **Unit & integration tests** — The reducer is pure-function logic ideal for unit tests; component rendering with React Testing Library and Cypress for drag-and-drop e2e flows
+- **Accessibility audit** — While ARIA attributes and keyboard navigation are present, a full WCAG 2.1 audit with a screen reader would identify gaps
+- **Framer Motion transitions** — Smooth animations for task moves, modal enter/exit, and sidebar collapse would elevate the UX polish
 
 ## License
 

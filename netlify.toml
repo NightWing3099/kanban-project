@@ -1,33 +1,16 @@
 # organizeME — Netlify Configuration
-# Publish directory points to the starter-code directory
+# Build and deploy the Vite React app from kanban-app/
 [build]
-  publish = "starter-code/"
+  command = "cd kanban-app && npm install && npm run build"
+  publish = "kanban-app/dist/"
 
-# All traffic to index.html (single-page app catch-all)
+# SPA fallback: all routes serve index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Enable asset optimization on Netlify's side
-[build.processing]
-  skip_processing = false
-
-[build.processing.css]
-  bundle = true
-  minify = true
-
-[build.processing.js]
-  bundle = true
-  minify = true
-
-[build.processing.html]
-  pretty_url = true
-
-[build.processing.images]
-  compress = true
-
-# Set cache control for different asset types
+# Security headers
 [[headers]]
   for = "/*"
   [headers.values]
@@ -35,37 +18,8 @@
     X-Frame-Options = "DENY"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
+# Cache immutable assets for 1 year (Vite generates content hashes)
 [[headers]]
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "*.css"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "*.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "*.json"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "*.svg"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "*.png"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
