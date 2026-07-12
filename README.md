@@ -2,7 +2,7 @@
 
 A fully responsive, feature-rich kanban board application for organizing projects, tracking tasks, and collaborating with clarity. Built with vanilla HTML, CSS, and JavaScript — no framework overhead, just a fast, accessible experience that works everywhere.
 
-![organizeME preview](./preview.jpg)
+
 
 ---
 
